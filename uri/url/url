@@ -1,0 +1,7 @@
+  /code/racketlib/net/url:
+  total used in directory 60 available 41387512
+  drwxrwxr-x 2 ray ray  4096 May 12 11:23 .
+  -rw-rw-r-- 1 ray ray 13675 May 12 11:23 parse.rkt
+  drwxrwxr-x 3 ray ray  4096 May 12 11:12 ..
+  -rw-rw-r-- 1 ray ray  2443 May 12 11:23 url.rkt
+  -rw-rw-r-- 1 ray ray 15081 May 12 11:12 url.rkt~
