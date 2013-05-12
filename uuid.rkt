@@ -14,7 +14,7 @@ This module is Racket thread safe. |#
                     [#:width Integer] -> String)])
 
 (require 
- system/mac)
+ system/interface)
 
 (define default-interface "eth0")
 
