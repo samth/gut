@@ -18,6 +18,13 @@
 
 #lang typed/racket
 
+(provide:
+  [parse-url (String -> (Either ParseError Url))]
+  [parse-hier (Input-Port -> (values (Option String) String))]
+  [parse-query (Input-Port -> (Either ParseError QParams))]
+  [parse-fragment (Input-Port -> (Option String))]
+  [parse-authority (String Scheme -> (Option Authority))])
+
 (require 
  (only-in type/either
 	  Either Left Right Left? Right?
@@ -39,14 +46,6 @@
 	  parse-scheme)
  "urlchar.rkt"
  "types.rkt")
-
-(provide:
-  [parse-url (String -> (Either ParseError Url))]
-  [parse-hier (Input-Port -> (values (Option String) String))]
-  [parse-query (Input-Port -> (Either ParseError QParams))]
-  [parse-fragment (Input-Port -> (Option String))]
-  [parse-authority (String Scheme -> (Option Authority))]
- )
 
 (: make-url (Scheme Authority Path QParams Fragment -> Uri))
 (define (make-url scheme authority path query fragment)
