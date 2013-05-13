@@ -350,10 +350,4 @@
 ;;   (struct-copy Url url [path (path->string (build-path (Url-path uri)
 ;;                                                        (string->path relative-path)))]))
 
-;; (: uri->start-line-path-string (Url -> String))
-;; (define (uri->start-line-path-string uri)  
-;;   (string-append
-;;    (Url-path uri)
-;;    (maybe (Url-query uri) "?")
-;;    (maybe (Url-fragment uri) "#")))
 

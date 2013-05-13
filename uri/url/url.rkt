@@ -1,10 +1,11 @@
 #lang typed/racket/base
 
 (provide 
- parse-url url->string
+ parse-url url->string scheme->string
  Scheme
  Uri Uri? Uri-scheme
- Url Url? Url-authority Url-path Url-query Url-fragment)
+ Url Url? Url-authority Url-path Url-query Url-fragment
+ Authority Authority-host Authority-user Authority-port) 
 
 (require 
  (only-in type/either
@@ -13,5 +14,7 @@
  "../parse.rkt"
  "types.rkt"
  "parse.rkt"
- (only-in "show.rkt"
+ (only-in "../show.rkt"
+	  scheme->string)
+ (only-in "show.rkt"	 
 	  url->string))

@@ -21,6 +21,7 @@
 #| String representation of a Url |#
 
 (provide:
+ [url->path-query-fragment-string (Url -> String)]
  [url->string (Url -> String)])
 
 (require 
@@ -51,19 +52,6 @@
 								(QParam-value qparam)))))
 				       qparams))))
 
-(: url->string (Url -> String))
-(define (url->string url)
-  (string-append   
-   (scheme->string (Uri-scheme url))
-   ":"
-   (let ((auth (authority->string (Url-authority url))))
-     (if auth
-         (string-append "//" auth)
-         ""))
-   (Url-path url)
-   (maybe (qparams->string (Url-query url)) "?")
-   (maybe (Url-fragment url) "#")))
-
 (: authority->string ((Option Authority) -> (Option String)))
 (define (authority->string authority)
   
@@ -89,12 +77,23 @@
 		   (port-with-: authority)))  
    (else #f)))
 
-;; Two authorities are equal if they're record values are equal.
-(: authority-equal? (Authority Authority -> Boolean))
-(define (authority-equal? auth1 auth2)
-  (and (equal? (Authority-user auth1)
-               (Authority-user auth2))
-       (equal? (Authority-host auth1)
-               (Authority-host auth2))
-       (eqv? (Authority-port auth1)
-             (Authority-port auth2))))
+(: url->string (Url -> String))
+(define (url->string url)
+  (string-append   
+   (scheme->string (Uri-scheme url))
+   ":"
+   (let ((auth (authority->string (Url-authority url))))
+     (if auth
+         (string-append "//" auth)
+         ""))
+   (Url-path url)
+   (maybe (qparams->string (Url-query url)) "?")
+   (maybe (Url-fragment url) "#")))
+
+(: url->path-query-fragment-string (Url -> String))
+(define (url->path-query-fragment-string url)  
+  (string-append
+   (Url-path url)
+   (maybe (qparams->string (Url-query url)) "?")
+   (maybe (Url-fragment url) "#")))
+
