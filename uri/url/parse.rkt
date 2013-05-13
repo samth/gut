@@ -16,137 +16,45 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-#lang typed/racket/base
+#lang typed/racket
 
 (require 
+ (only-in type/either
+	  Either Left Right Left? Right?
+	  left right)
+ (only-in type/opt
+	  opt-apply-orelse
+	  opt-map)
+ (only-in type/string
+	  null-string?
+	  default-string)
+ (only-in "../types.rkt"
+	  Uri Uri-scheme Scheme)
+ (only-in "../urichar.rkt"	  
+	  digit-char?)
+ (only-in "../parse-util.rkt"
+	  read-until)
+ (only-in "../parse.rkt"
+	  ParseError
+	  parse-scheme)
+ "urlchar.rkt"
  "types.rkt")
 
 (provide:
- [parse-uri (String -> (Option Uri))]
- [parse-authority (String String -> (Option Authority))]
- [uri->string (Uri -> String)]
- [parse-http-path (String -> (Listof (Option String)))]
- [uri->start-line-path-string (Uri -> String)]
- [http-path-path ((Listof String) -> String)]
- [http-path-query ((Listof String) -> String)]
- [http-path-fragment ((Listof String) -> String)]
- [extend-path (Uri String -> Uri)])
+  [parse-url (String -> (Either ParseError Url))]
+  [parse-hier (Input-Port -> (values (Option String) String))]
+  [parse-query (Input-Port -> (Either ParseError QParams))]
+  [parse-fragment (Input-Port -> (Option String))]
+  [parse-authority (String Scheme -> (Option Authority))]
+ )
 
 (: make-url (Scheme Authority Path QParams Fragment -> Uri))
-(define (make-uri* scheme authority path query fragment)
+(define (make-url scheme authority path query fragment)
   (Url scheme authority
-       (opt-string path "/")
-       (opt-string query)
-       (opt-string fragment)))
-
-
-;; Note NOT hygenic, captures the identifer `ch' 
-;; which is required within the given `until-block' logic.
-(define-syntax (read-until stx)
-  (syntax-case stx ()
-    [(_ ip op until-block)
-     (with-syntax ([ch (datum->syntax stx 'ch )])
-       #'(read-valid ip (λ: ((ch : Char)) until-block) op))]))
-
-
-;; Prefix an optional string value.
-;; An empty string if not defined.
-(: maybe ((Option String) String -> String))
-(define (maybe field prefix)
-  (opt-apply-orelse field (λ: ((field : String))
-                            (string-append prefix field)) ""))
-
-;; Read chars while valid or eof-object?
-;; Place valid chars in output string port
-;; First invalid char is left on the input port
-;; returns: number of valid chars read from input port.
-(: read-valid (Input-Port (Char -> Boolean) Output-Port -> Integer))
-(define (read-valid ip valid? op)
-  (let loop ((ch (peek-char ip)) (cnt 0))
-    (if (or (eof-object? ch)
-            (not (valid? ch)))
-        cnt
-        (begin
-          (write-char (assert (read-char ip) char?) op)
-          (loop (peek-char ip) (add1 cnt))))))
-
-(: uri->start-line-path-string (Uri -> String))
-(define (uri->start-line-path-string uri)  
-  (string-append
-   (Uri-path uri)
-   (maybe (Uri-query uri) "?")
-   (maybe (Uri-fragment uri) "#")))
-
-(: uri->string (Uri -> String))
-(define (uri->string uri)
-  (string-append
-   (Uri-scheme uri)
-   ":"
-   (let ((auth (authority->string (Uri-authority uri))))
-     (if auth
-         (string-append "//" auth)
-         ""))
-   (Uri-path uri)
-   (maybe (Uri-query uri) "?")
-   (maybe (Uri-fragment uri) "#")))
-
-(: authority->string ((Option Authority) -> (Option String)))
-(define (authority->string authority)
-  
-  (: user-with-@ (Authority -> String))
-  (define (user-with-@ authority)
-    (let ((user (Authority-user authority)))
-      (if (and user
-               (> (string-length user) 0))
-          (string-append user "@")
-          "")))
-  
-  (: port-with-: (Authority -> String))
-  (define (port-with-: authority)
-    (let ((port (Authority-port authority)))
-      (opt-apply-orelse port (λ: ((port : Natural)) (string-append ":" (number->string port)))
-                        "")))
-  
-  (cond
-    ((string? authority) authority)
-    ((Authority? authority)
-     (string-append (user-with-@ authority)
-                    (Authority-host authority)
-                    (port-with-: authority)))  
-    (else #f)))
-
-;; Two authorities are equal if they're record values are equal.
-(: authority-equal? (Authority Authority -> Boolean))
-(define (authority-equal? auth1 auth2)
-  (and (equal? (Authority-user auth1)
-               (Authority-user auth2))
-       (equal? (Authority-host auth1)
-               (Authority-host auth2))
-       (eqv? (Authority-port auth1)
-             (Authority-port auth2))))
-
-;; (input-port?  output-port?) -> boolean?)
-;; parse the "tail" of a scheme
-;; i.e., the rest of the scheme string given that
-;; the start char of the scheme was valid.
-;; returns: # of chars read
-(: parse-scheme-tail (Input-Port Output-Port -> Integer))
-(define (parse-scheme-tail ip op)
-  (read-until ip op (scheme-tail-ch? ch)))
-
-(: parse-scheme (Input-Port -> (Option String)))
-(define (parse-scheme ip)
-  (let ((op (open-output-string)))
-    (let ((ch (peek-char ip)))
-      (if (eof-object? ch)
-          #f
-          (let ((ch (assert ch char?)))
-            (if (not (scheme-start-ch? ch))
-                #f
-                (begin (read-char ip)
-                       (write-char ch op)
-                       (parse-scheme-tail ip op)
-                       (get-output-string op))))))))
+       (default-string path "/")
+       query
+       (opt-map fragment (λ: ((s : String))
+			     (if (null-string? s) #f s)))))
 
 ;; lex a character of value chtok
 ;; returns: #f if the next character is not a chtok
@@ -230,62 +138,86 @@
                   (values #f (parse-path-absolute ip))))
             (values #f (parse-path-rootless ip))))))
 
-(: parse-query-or-fragment (Input-Port Char -> (Option String)))
-(define (parse-query-or-fragment ip signal-char)
+(: encode-char-out (Char Output-Port -> Void))
+(define (encode-char-out ch outp)
+  (write-char #\% outp)
+  (display (string-upcase (number->string (char->integer ch) 16)) outp))
+
+(: encode-out (Char Output-Port -> Output-Port))
+(define (encode-out ch outp)  
+  (if (unreserved-char? ch)
+      (write-char ch outp)
+      (encode-char-out ch outp))
+  outp)
+
+(: MISSING-QUERY-PARAM-NAME String)
+(define MISSING-QUERY-PARAM-NAME "Query contains a '=' without a parameter name on the left hand side.")
+
+(: parse-query (Input-Port -> (Either ParseError QParams)))
+(define (parse-query ip)       
+
+  (: end-of-query (Output-Port (Option String) QParams -> (Right QParams)))
+  (define (end-of-query os name params)
+    (let ((token (get-output-string os)))			
+      (Right (if name 
+		 (reverse (cons (QParam name token) params))
+		 (if (null-string? token)
+		     (reverse params)
+		     (reverse (cons (QParam token "") params)))))))
+
   (let ((ch (peek-char ip)))
     (if (eof-object? ch)
-        #f
-        (if (eq? ch signal-char)
-            (let ((op (open-output-string)))
-              (read-char ip) ;; consume signal char
-              (read-until ip op (or (pchar? ch)
-                                    (eq? ch #\?)
-                                    (eq? ch #\/)))
-              (get-output-string op))
-            #f))))
+	(Right '())    
+	(if (char=? ch #\?)      
+	    (begin
+	      (read-char ip) ;; burn ?
+	      (let: loop : (Either ParseError QParams) 
+		    ((ch : (U EOF Char) (read-char ip))
+		     (os : Output-Port (open-output-string))
+		     (name : (Option String) #f) 
+		     (params : QParams '()))
+		    (if (eof-object? ch)
+			(end-of-query os name params)
+			(cond
+			 ((char=? ch #\#)
+			  (end-of-query os name params))
+			 ((char=? ch #\=)
+			  (if name
+			      (loop (read-char ip) (encode-out ch os) name params)
+			      (let ((name (get-output-string os)))
+				(if (null-string? name)
+				    (Left (ParseError MISSING-QUERY-PARAM-NAME))
+				    (loop (read-char ip)
+					  (open-output-string)
+					  name
+					  params)))))
+			 ((char=? ch #\&)
+			  (if name
+			      (loop (read-char ip)
+				    (open-output-string)
+				    #f
+				    (cons (QParam name (get-output-string os)) params))
+			      (loop (read-char ip)
+				    (open-output-string)
+				    #f
+				    (cons (QParam (get-output-string os) "") params))))
+			 (else 
+			  (loop (read-char ip) (encode-out ch os) name params))))))
+	    (Right '())))))
 
-(: parse-uri (String -> (Option Uri)))
-(define (parse-uri uri-str)
-  (let ((ip (open-input-string uri-str)))
-    (let ((scheme (parse-scheme ip)))
-      (if (not scheme)
-          #f
-          (if (not (parse-char ip #\:))
-              #f
-              (let-values (((authority path) (parse-hier ip)))                
-                (let ((auth (if (string? authority)
-                                (parse-authority authority scheme)
-                                #f)))
-                  (let ((query (parse-query-or-fragment ip #\?)))
-                    (let ((fragment (parse-query-or-fragment ip #\#)))
-                      (Uri scheme auth path query fragment))))))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Routines to parse a HTTP request start line path.				 ;;
-;; Given start-line "GET /a/b/c/d.txt?x=2#one" 				 ;;
-;; (parse-http-start-line-path start-line) => ("a/b/c/d.txt"  "x=2" "one")	 ;;
-;; The other routines are just sugar to extract out the path, query or fragment ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(: http-path-path ((Listof String) -> String))
-(define (http-path-path slpath)  
-  (car slpath))
-
-(: http-path-query ((Listof String) -> String))
-(define (http-path-query slpath)  
-  (cadr slpath))
-
-(: http-path-fragment ((Listof String) -> String))
-(define (http-path-fragment slpath)
-  (caddr slpath))
-
-(: parse-http-path (String -> (Listof (Option String))))
-(define (parse-http-path path-str)
-  (let ((ip (open-input-string path-str)))
-    (let-values (((auth path) (parse-hier ip)))
-      (let ((query (parse-query-or-fragment ip #\?)))
-        (let ((fragment (parse-query-or-fragment ip #\#)))
-          (list path query fragment))))))
+(: parse-fragment (Input-Port -> (Option String)))
+(define (parse-fragment ip)
+  (let ((ch (peek-char ip)))
+    (if (eof-object? ch)
+	#f
+	(begin 
+	  (when (char=? ch #\#)
+		(read-char ip))
+	  (let loop ((ch (read-char ip)) (os (open-output-string)))    
+	    (if (eof-object? ch)
+		(let ((frag (get-output-string os)))
+		  (if (null-string? frag) #f frag))
+		(loop (read-char ip) (encode-out ch os))))))))
 
 ;; Parse out the port string.
 ;; Assumes leading ':' has been consumed.
@@ -336,14 +268,16 @@
         #f
         (get-output-string op))))
 
-(: scheme-default-port (String -> (Option Natural)))
+(: scheme-default-port (Scheme -> (Option Natural)))
 (define (scheme-default-port scheme)
-  (cond
-    ((string=? "http" scheme) 80)
-    ((string=? "https" scheme) 443)
-    (else #f)))
+  (if (symbol? scheme)
+      (case scheme
+	((HTTP) 80)
+	((HTTPS) 443)
+	(else #f))
+      #f))
 
-(: parse-authority (String String -> (Option Authority)))
+(: parse-authority (String Scheme -> (Option Authority)))
 (define (parse-authority auth-str scheme)
   (if (not (string? auth-str))
       #f
@@ -359,7 +293,68 @@
                   (Authority user host port)
                   #f)))))))
 
-(: extend-path (Uri String -> Uri))
-(define (extend-path uri relative-path)
-  (struct-copy Uri uri [path (path->string (build-path (Uri-path uri)
-                                                       (string->path relative-path)))]))
+(: parse-url (String -> (Either ParseError Url)))
+(define (parse-url uri-str)
+  (let ((ip (open-input-string uri-str)))
+    (let: ((scheme : (Either ParseError Scheme) (parse-scheme ip)))
+      (if (Left? scheme)
+	  scheme
+	  (let-values (((authority path) (parse-hier ip)))
+	    (let* ((auth (if (string? authority)
+			     (parse-authority authority (right scheme))
+			     #f))
+		   (query (parse-query ip))
+		   (fragment (parse-fragment ip)))
+	      (if (Left? query)
+		  query
+		  (if auth
+		      (Right (Url (right scheme) auth path (right query) fragment))
+		      (Left (ParseError "Invalid scheme. Missing ':'?"))))))))))
+
+ ;; [uri->string (Uri -> String)]
+ ;; [parse-http-path (String -> (Listof (Option String)))]
+ ;; [uri->start-line-path-string (Uri -> String)]
+ ;; [http-path-path ((Listof String) -> String)]
+ ;; [http-path-query ((Listof String) -> String)]
+ ;; [http-path-fragment ((Listof String) -> String)]
+ ;; [extend-path (Uri String -> Uri)]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; to parse a HTTP request start line path.				 ;;
+;; Given start-line "GET /a/b/c/d.txt?x=2#one" 				 ;;
+;; (parse-http-start-line-path start-line) => ("a/b/c/d.txt"  "x=2" "one")	 ;;
+;; The other routines are just sugar to extract out the path, query or fragment ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (: http-path-path ((Listof String) -> String))
+;; (define (http-path-path slpath)  
+;;   (car slpath))
+
+;; (: http-path-query ((Listof String) -> String))
+;; (define (http-path-query slpath)  
+;;   (cadr slpath))
+
+;; (: http-path-fragment ((Listof String) -> String))
+;; (define (http-path-fragment slpath)
+;;   (caddr slpath))
+
+;; (: parse-http-path (String -> (Listof (Option String))))
+;; (define (parse-http-path path-str)
+;;   (let ((ip (open-input-string path-str)))
+;;     (let-values (((auth path) (parse-hier ip)))
+;;       (let ((query (parse-query-or-fragment ip #\?)))
+;;         (let ((fragment (parse-query-or-fragment ip #\#)))
+;;           (list path query fragment))))))
+
+;; (: extend-path (Url String -> Ur))
+;; (define (extend-path url relative-path)
+;;   (struct-copy Url url [path (path->string (build-path (Url-path uri)
+;;                                                        (string->path relative-path)))]))
+
+;; (: uri->start-line-path-string (Url -> String))
+;; (define (uri->start-line-path-string uri)  
+;;   (string-append
+;;    (Url-path uri)
+;;    (maybe (Url-query uri) "?")
+;;    (maybe (Url-fragment uri) "#")))
+

@@ -24,22 +24,25 @@
  (struct-out Url)
  (struct-out Authority))
 
+(require 
+ (only-in  "../types.rkt"
+	   Scheme Uri Uri-scheme))
+
 (define-type Path String)
 (define-type Fragment (Option String))
-(define-type QParams (Listof QParam))
+(define-type QParams  (Listof QParam))
 
-(define-type Scheme (U 'HTTP 'FTP String))
+(define-type UrlScheme (U 'HTTP 'FTP 'File))
 
 ;; Invariant: name and value are always encoded.
 (struct: QParam ([name : String]
-		 [value : String]))
+		 [value : String]) #:transparent)
 
 (struct: Authority ([user : (Option String)]
                     [host : String]
-                    [port : (Option Natural)]))
+                    [port : (Option Natural)]) #:transparent)
 
-(struct: Url ([scheme : Scheme]
-	      [authority : Authority]
-	      [path : Path]
-	      [query : QParams]
-	      [fragment : Fragment]))
+(struct: Url Uri ([authority : Authority]
+		  [path : Path]
+		  [query : QParams]
+		  [fragment : Fragment]) #:transparent)
