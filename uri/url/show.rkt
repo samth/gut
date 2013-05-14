@@ -29,7 +29,7 @@
 	  null-string?)
  (only-in type/opt
 	  opt-apply-orelse)
- (only-in text/util
+ (only-in type/text
 	  weave-string-separator)
  (only-in "../types.rkt"
 	  Uri-scheme)

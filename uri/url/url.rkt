@@ -2,7 +2,7 @@
 
 (provide 
  parse-url url->string scheme->string
- Scheme
+ Scheme QParam QParams QParam-name QParam-value
  Uri Uri? Uri-scheme
  Url Url? Url-authority Url-path Url-query Url-fragment
  Authority Authority-host Authority-user Authority-port) 
