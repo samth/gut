@@ -137,17 +137,22 @@
                   (values #f (parse-path-absolute ip))))
             (values #f (parse-path-rootless ip))))))
 
-(: encode-char-out (Char Output-Port -> Void))
-(define (encode-char-out ch outp)
-  (write-char #\% outp)
-  (display (string-upcase (number->string (char->integer ch) 16)) outp))
+;; (: encode-char-out (Char Output-Port -> Void))
+;; (define (encode-char-out ch outp)
+;;   (write-char #\% outp)
+;;   (display (string-upcase (number->string (char->integer ch) 16)) outp))
 
-(: encode-out (Char Output-Port -> Output-Port))
-(define (encode-out ch outp)  
-  (if (unreserved-char? ch)
-      (write-char ch outp)
-      (encode-char-out ch outp))
-  outp)
+;; (: encode-out (Char Output-Port -> Output-Port))
+;; (define (encode-out ch outp)  
+;;   (if (unreserved-char? ch)
+;;       (write-char ch outp)
+;;       (encode-char-out ch outp))
+;;   outp)
+
+(: write-out (Char Output-Port -> Output-Port))
+(define (write-out ch os)
+  (write-char ch os)
+  os)
 
 (: MISSING-QUERY-PARAM-NAME String)
 (define MISSING-QUERY-PARAM-NAME "Query contains a '=' without a parameter name on the left hand side.")
@@ -182,7 +187,7 @@
 			  (end-of-query os name params))
 			 ((char=? ch #\=)
 			  (if name
-			      (loop (read-char ip) (encode-out ch os) name params)
+			      (loop (read-char ip) (write-out ch os) name params)
 			      (let ((name (get-output-string os)))
 				(if (null-string? name)
 				    (Left (ParseError MISSING-QUERY-PARAM-NAME))
@@ -201,7 +206,7 @@
 				    #f
 				    (cons (QParam (get-output-string os) "") params))))
 			 (else 
-			  (loop (read-char ip) (encode-out ch os) name params))))))
+			  (loop (read-char ip) (write-out ch os) name params))))))
 	    (Right '())))))
 
 (: parse-fragment (Input-Port -> (Option String)))
@@ -216,7 +221,7 @@
 	    (if (eof-object? ch)
 		(let ((frag (get-output-string os)))
 		  (if (null-string? frag) #f frag))
-		(loop (read-char ip) (encode-out ch os))))))))
+		(loop (read-char ip) (write-out ch os))))))))
 
 ;; Parse out the port string.
 ;; Assumes leading ':' has been consumed.
