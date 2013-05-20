@@ -2,6 +2,7 @@
 
 (provide 
  parse-url url->string scheme->string
+ add-qparam merge-qparams lowercase-name qparam-values
  Scheme QParam QParams QParam-name QParam-value
  Uri Uri? Uri-scheme
  Url Url? Url-authority Url-path Url-query Url-fragment
@@ -14,6 +15,7 @@
  "../parse.rkt"
  "types.rkt"
  "parse.rkt"
+ "qparams.rkt"
  (only-in "../show.rkt"
 	  scheme->string)
  (only-in "show.rkt"	 

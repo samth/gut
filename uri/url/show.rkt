@@ -21,10 +21,11 @@
 #| String representation of a Url |#
 
 (provide:
+ [qparams->string (QParams -> (Option String))]
  [url->path-query-fragment-string (Url -> String)]
  [url->string (Url -> String)])
 
-(require 
+(require
  (only-in type/string
 	  null-string?)
  (only-in type/opt
@@ -54,46 +55,45 @@
 
 (: authority->string ((Option Authority) -> (Option String)))
 (define (authority->string authority)
-  
+
   (: user-with-@ (Authority -> String))
   (define (user-with-@ authority)
     (let ((user (Authority-user authority)))
       (if (and user
-               (> (string-length user) 0))
-          (string-append user "@")
-          "")))
-  
+	       (> (string-length user) 0))
+	  (string-append user "@")
+	  "")))
+
   (: port-with-: (Authority -> String))
   (define (port-with-: authority)
     (let ((port (Authority-port authority)))
       (opt-apply-orelse port (λ: ((port : Natural)) (string-append ":" (number->string port)))
-                        "")))
-  
+			"")))
+
   (cond
    ((string? authority) authority)
    ((Authority? authority)
     (string-append (user-with-@ authority)
 		   (Authority-host authority)
-		   (port-with-: authority)))  
+		   (port-with-: authority)))
    (else #f)))
 
 (: url->string (Url -> String))
 (define (url->string url)
-  (string-append   
+  (string-append
    (scheme->string (Uri-scheme url))
    ":"
    (let ((auth (authority->string (Url-authority url))))
      (if auth
-         (string-append "//" auth)
-         ""))
+	 (string-append "//" auth)
+	 ""))
    (Url-path url)
    (maybe (qparams->string (Url-query url)) "?")
    (maybe (Url-fragment url) "#")))
 
 (: url->path-query-fragment-string (Url -> String))
-(define (url->path-query-fragment-string url)  
+(define (url->path-query-fragment-string url)
   (string-append
    (Url-path url)
    (maybe (qparams->string (Url-query url)) "?")
    (maybe (Url-fragment url) "#")))
-
