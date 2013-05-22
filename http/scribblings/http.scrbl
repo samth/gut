@@ -6,7 +6,7 @@
 
 @title{HTTP Client}
 
-@defmodule["../../httpclient/http/http11.rkt"]
+@defmodule["../http/http11.rkt"]
 
 @section{HTTP Data Structures}
 
@@ -100,7 +100,7 @@ Properly close the connection to the server.  Currently a close @italic{must} be
 
 Headers are name value pairs defined in the HTTP 1.1 specification.
 
-@defmodule["../httpclient/http/header.rkt"]{
+@defmodule["../http/header.rkt"]{
 
 @defthing[Header (define-type Header (Pair String String))]{
 A Header is typed defined as a pairof strings, the name and value.
@@ -142,3 +142,23 @@ Utility procedures that construct common HTTP header values.  Generally are not 
 }
 
 }
+
+@section{Encoding}
+
+@subsection{URL Encoding / Decoding}
+@defmodule["../url/encode.rkt"]{
+
+@defproc[(url-encode-string [str String] [space-as-plus Boolean]) String]{
+URL encode a string converting reserved characters as percent hex values. 
+If @racket[space-as-plus] is true spaces are encoded as @litchar["+"] chars in lieu of encoding as a  @litchar["%20"].
+}
+
+@defproc[(url-decode-string [str String] [delim (Option Char)] [decode-plus? Boolean]) String]{
+URL decode the given string converting percent hex encoded values.  If @racket[delim] decode until the deliminator char otherwise decode until the entire string.  If @racket[decode-plus?] is true @litchar["+"] chars decode as a @litchar[" "] (a @racket[#\space]).
+}
+
+@defproc[(url-decode-from-input-port [str String] [delim (Option Char)] [decode-plus? Boolean]) String]{
+Reading chars from the input port URL decoding percent hex encoded values.  If @racket[delim] decode until the deliminator char is found or if not defined until eof-object?.  If @racket[decode-plus?] is true @litchar["+"] chars decode as a @litchar[" "] (a @racket[#\space]).
+}
+}
+

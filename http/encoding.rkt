@@ -25,7 +25,7 @@
  (only-in srfi/14
 	  char-set-complement
 	  list->char-set)
- (only-in httpclient/encode
+ (only-in "encode.rkt"
 	  url-decode-from-input-port))
 
 (: key-delim Char)
@@ -41,8 +41,8 @@
 ;; parse port contents into an alist of (k . v) pairs
 (: parse-x-www-form-urlencoded (Input-Port -> (Listof (Pair String String))))
 (define (parse-x-www-form-urlencoded in-port)
-  (let: loop : (Listof (Pair String String)) 
-	((key : (Option String) #f) 
+  (let: loop : (Listof (Pair String String))
+	((key : (Option String) #f)
 	 (kvs : (Listof (Pair String String))  '()))
 	(if key
 	    (loop #f (cons (cons key (read-token in-port value-delim)) kvs))
@@ -51,4 +51,3 @@
 		       (string=? key ""))
 		  kvs
 		  (loop key kvs))))))
-

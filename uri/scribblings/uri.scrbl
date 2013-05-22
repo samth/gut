@@ -11,7 +11,7 @@ The original intent of the URI library was for full support of URI genericity, h
 
 @subsection{URI Data Structures}
 
-@defmodule["../../httpclient/uri.rkt"]{
+@defmodule["../url/url.rkt"]{
 
 @defstruct*[Uri ([scheme String]
 	         [authority  (U False Authority)]
@@ -39,29 +39,11 @@ Parse the given string into a @racket[Uri].  If the string fails to parse #f is 
 }
 }
 
-@section{URL}
-
-@subsection{URL Encoding / Decoding}
-
-@defmodule["../httpclient/uri/url/encode.rkt"]{
-
-@defproc[(url-encode-string [str String] [space-as-plus Boolean]) String]{
-URL encode a string converting reserved characters as percent hex values. 
-If @racket[space-as-plus] is true spaces are encoded as @litchar["+"] chars in lieu of encoding as a  @litchar["%20"].
-}
-
-@defproc[(url-decode-string [str String] [delim (Option Char)] [decode-plus? Boolean]) String]{
-URL decode the given string converting percent hex encoded values.  If @racket[delim] decode until the deliminator char otherwise decode until the entire string.  If @racket[decode-plus?] is true @litchar["+"] chars decode as a @litchar[" "] (a @racket[#\space]).
-}
-
-@defproc[(url-decode-from-input-port [str String] [delim (Option Char)] [decode-plus? Boolean]) String]{
-Reading chars from the input port URL decoding percent hex encoded values.  If @racket[delim] decode until the deliminator char is found or if not defined until eof-object?.  If @racket[decode-plus?] is true @litchar["+"] chars decode as a @litchar[" "] (a @racket[#\space]).
-}
-}
+@section{Url}
 
 @subsection{Query Params}
 
-@defmodule["../httpclient/uri/url/param.rkt"]{
+@defmodule["../url/param.rkt"]{
 
 A @racket[Param] is a name value pair intended for use in constructing the URL query string.
 

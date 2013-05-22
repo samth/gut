@@ -6,7 +6,7 @@
 
 @title[#:tag "top"]{@bold{HTTPClient} A Typed Racket HTTP Client}
 
-@declare-exporting["../../httpclient.rkt"]
+@declare-exporting["../http11.rkt"]
 
 @table-of-contents[]
 
@@ -16,4 +16,3 @@ This library provides a synchronous invoking HTTP Client which is generally in a
 
 @include-section["http.scrbl"]
 
-@include-section["uri.scrbl"]

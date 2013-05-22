@@ -1,3 +1,3 @@
 #lang setup/infotab
-(define name "httpclient")
+(define name "http")
 (define scribblings '(("scribblings/manual.scrbl" (multi-page))))

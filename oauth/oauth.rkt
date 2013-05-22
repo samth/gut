@@ -40,11 +40,11 @@
 	  Authority-host
 	  QParam QParams QParam-name QParam-value
 	  Uri Url Uri-scheme Url-authority Url-path Url-query Url-fragment)
- (only-in httpclient/param
+ (only-in net/http/param
 	  Param Params  param->noencode-string
 	  param make-params empty-params
 	  param-keyval params->query add-param)
- (only-in httpclient/http11
+ (only-in net/http/http11
 	  Method http-method->string)
  (only-in "encode.rkt"
 	  encode))
@@ -67,7 +67,7 @@
 (: generate-nonce (-> String))
 (define (generate-nonce)
   (weave-string-separator "" (for/list ([i (in-range 10)])
-				    (number->string (random 10)))))
+				       (number->string (random 10)))))
 
 (: current-timestamp (-> String))
 (define (current-timestamp)
@@ -131,7 +131,7 @@
 	(path (encode (string-append (scheme->string (Uri-scheme url))
 				     "://"
 				     (opt-map-orelse-value (Url-authority url)
-						      Authority-host "")
+							   Authority-host "")
 				     (Url-path url))))
 	(qparams (encode (params->query oauth-params))))
     (weave-string-separator "&" (list method path qparams))))
@@ -152,7 +152,7 @@
 
 (: oauth-authorization-header (OAuth Method Url -> Param))
 (define (oauth-authorization-header oauth method url)
-  (let* ((auth-param-strs (map param->noencode-string 
+  (let* ((auth-param-strs (map param->noencode-string
 			       (build-oauth-signature-params oauth method url)))
 	 (auth-str (weave-string-separator "," auth-param-strs)))
     (param "Authorization" (string-append "OAuth " auth-str))))
