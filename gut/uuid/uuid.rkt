@@ -1,20 +1,20 @@
 #lang typed/racket/base
 
-#| Sorta kinda compliant GUID/UUID generator.  
-A Version 1 generator based off of RFC4122 
+#| Sorta kinda compliant GUID/UUID generator.
+A Version 1 generator based off of RFC4122
 This module is Racket thread safe. |#
 
 (provide:
  [uuid (-> String)])
 
-(require/typed racket/format 
-               [~a (Any
-                    [#:align (U 'left 'center 'right)]
-                    [#:left-pad-string String]
-                    [#:width Integer] -> String)])
+(require/typed racket/format
+	       [~a (Any
+		    [#:align (U 'left 'center 'right)]
+		    [#:left-pad-string String]
+		    [#:width Integer] -> String)])
 
-(require 
- system/interface)
+(require
+ grip/system/interface)
 
 (define default-interface "eth0")
 
@@ -29,12 +29,12 @@ This module is Racket thread safe. |#
 (: timestamp-version (-> String))
 (define (timestamp-version)
   (let ((ts (+ (* (inexact->exact (* (current-inexact-milliseconds) 1000)) 1000)
-               (random 1000)))) ;; above give micro secs, simulate nanos, which is silly I know.
+	       (random 1000)))) ;; above give micro secs, simulate nanos, which is silly I know.
     (string-append "1"
-                   (~a (format "~x" ts) 
-                       #:align 'right
-                       #:width 15
-                       #:left-pad-string "0"))))
+		   (~a (format "~x" ts)
+		       #:align 'right
+		       #:width 15
+		       #:left-pad-string "0"))))
 
 ;; Determine the clock sequence part of the GUID
 ;; The clock sequence is a rolling 14 bit number starting
@@ -43,7 +43,7 @@ This module is Racket thread safe. |#
 (: SEQ-MAX Integer)
 (define SEQ-MAX (expt 2 14))
 
-;; sets the most sig two bits in the top 6 bits of the 
+;; sets the most sig two bits in the top 6 bits of the
 ;; clock sequence to "10"
 (: VARIANT Integer)
 (define VARIANT 32768)
@@ -51,12 +51,12 @@ This module is Racket thread safe. |#
 (define clock-sequence-semaphore (make-semaphore 1))
 (define clock-sequence (random SEQ-MAX))
 
-(define (next-clock-sequence)  
-  (semaphore-wait clock-sequence-semaphore)  
+(define (next-clock-sequence)
+  (semaphore-wait clock-sequence-semaphore)
   (let ((cs (add1 clock-sequence)))
     (if (>= cs SEQ-MAX)
-        (set! clock-sequence 0)
-        (set! clock-sequence cs))
+	(set! clock-sequence 0)
+	(set! clock-sequence cs))
     (semaphore-post clock-sequence-semaphore)
     clock-sequence))
 
@@ -71,7 +71,7 @@ This module is Racket thread safe. |#
   (substring timestamp-version 8 16))
 
 (: time-mid (String -> String))
-(define (time-mid timestamp-version)                  
+(define (time-mid timestamp-version)
   (substring timestamp-version 4 8))
 
 (: time-high (String -> String))
@@ -81,10 +81,10 @@ This module is Racket thread safe. |#
 (: uuid (-> String))
 (define (uuid)
   (let ((ts-v (timestamp-version))
-        (cs-v (clock-sequence-and-variant)))
-    (format "~a-~a-~a-~a-~a" 
-            (time-low ts-v)
-            (time-mid ts-v)
-            (time-high ts-v)
-            cs-v
-            node)))
+	(cs-v (clock-sequence-and-variant)))
+    (format "~a-~a-~a-~a-~a"
+	    (time-low ts-v)
+	    (time-mid ts-v)
+	    (time-high ts-v)
+	    cs-v
+	    node)))

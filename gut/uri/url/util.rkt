@@ -19,10 +19,10 @@
 #lang typed/racket
 
 (provide:
-  [maybe ((Option String) String -> String)])
+ [maybe ((Option String) String -> String)])
 
 (require
- (only-in type/opt
+ (only-in grip/data/opt
 	  opt-apply-orelse))
 
 ;; Prefix an optional string value.
@@ -30,4 +30,4 @@
 (: maybe ((Option String) String -> String))
 (define (maybe field prefix)
   (opt-apply-orelse field (λ: ((field : String))
-                            (string-append prefix field)) ""))
+			      (string-append prefix field)) ""))

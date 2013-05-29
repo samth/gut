@@ -24,7 +24,7 @@
  url-decode-from-input-port)
 
 (require
- (only-in net/uri/url/urlchar
+ (only-in gut/uri/url/urlchar
 	  hex-char?
 	  encode-char
 	  unreserved-char?))
@@ -62,7 +62,7 @@
 			  (if (and (not (eof-object? ch2))
 				   (hex-char? ch2))
 			      (begin ;; use (let ((buff (make-string 2))) ???
-				(write-char (integer->char (assert (string->number (list->string (list ch1 ch2)) 16) 
+				(write-char (integer->char (assert (string->number (list->string (list ch1 ch2)) 16)
 								   exact-integer?))
 					    op)
 				(loop (read-char ip)))

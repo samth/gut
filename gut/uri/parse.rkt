@@ -26,9 +26,9 @@
  [parse-scheme (Input-Port -> (Either ParseError Scheme))])
 
 (require
- (only-in type/string
+ (only-in grip/data/string
 	  null-string?)
- (only-in type/either
+ (only-in grip/data/either
 	  Either Left Right)
  (only-in "types.rkt"
 	  Scheme)
@@ -42,7 +42,7 @@
 
 (: is-standard-scheme? (Scheme -> Boolean))
 (define (is-standard-scheme? scheme)
-       (symbol? scheme))
+  (symbol? scheme))
 
 (: standard-scheme-symbol (String -> Scheme))
 (define (standard-scheme-symbol str)
@@ -73,14 +73,14 @@
 (define (parse-scheme ip)
 
   (define (bad-start-char)
-    (Left (ParseError "Url scheme must start with alphabetic char.")))  
-  
+    (Left (ParseError "Url scheme must start with alphabetic char.")))
+
   (let ((start-ch (peek-char ip)))
     (if (eof-object? start-ch)
 	(bad-start-char)
 	(if (not (scheme-start-ch? start-ch))
 	    (bad-start-char)
-	    (let loop ((ch (read-char ip)) 
+	    (let loop ((ch (read-char ip))
 		       (op (open-output-string)))
 	      (if (eof-object? ch)
 		  (Left (ParseError "Missing ':' in Url."))

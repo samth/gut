@@ -25,7 +25,7 @@
  ;; Param
  [param (String String -> Param)]
  [param-key (Param -> String)]
- [param-val (Param -> String)] 
+ [param-val (Param -> String)]
  [param->noencode-string (Param -> String)]
  [param-keyval (Param -> (Values String String))]
  [encode-param (Param Boolean -> Param)]
@@ -37,23 +37,23 @@
 
  ;; Params
  [make-params (Param * -> Params)]
- [parse-params (String -> Params)] ;;encode-param-string 
+ [parse-params (String -> Params)] ;;encode-param-string
  [empty-params (-> Params)]
- [add-param (Param Params -> Params)] 
+ [add-param (Param Params -> Params)]
  [params->query (Params -> String)])
 
-(require 
+(require
  (only-in typed/srfi/14
 	  Char-Set
 	  string->char-set
 	  char-set-complement)
- (only-in type/text
+ (only-in grip/data/text
 	  weave-string-separator)
- (only-in net/uri/url/urlchar
+ (only-in gut/uri/url/urlchar
 	  encode-char
 	  unsafe-char?))
 
-(require/typed 
+(require/typed
  srfi/13
  (string-tokenize (String Char-Set -> (Listof String))))
 
@@ -105,10 +105,10 @@
   (let ((op (open-output-string))
 	(ip (open-input-string str)))
     (let loop ((ch (read-char ip)))
-      (cond 
+      (cond
        ((eof-object? ch) (get-output-string op))
-       ((char=? ch #\space) 
-	(if space-as-plus	   
+       ((char=? ch #\space)
+	(if space-as-plus
 	    (write-char #\+ op)
 	    (write-string "%20" op))
 	(loop (read-char ip)))
@@ -122,14 +122,14 @@
 	(loop (read-char ip)))))))
 
 ;; (if (eof-object? ch)
-;; 	 (get-output-string op)
-;; 	 (begin
-;; 	   (if (or (unsafe-char? ch)
-;; 		 (param-reserved-char? ch)
-;; 		 (char=? #\+ ch))
-;; 	      (write-string (encode-char ch) op)
-;; 	      (write-char ch op))
-;; 	   (loop (read-char ip)))))))
+;;	 (get-output-string op)
+;;	 (begin
+;;	   (if (or (unsafe-char? ch)
+;;		 (param-reserved-char? ch)
+;;		 (char=? #\+ ch))
+;;	      (write-string (encode-char ch) op)
+;;	      (write-char ch op))
+;;	   (loop (read-char ip)))))))
 
 (: encode-param (Param Boolean -> Param))
 (define (encode-param param space-as-plus)
@@ -143,7 +143,7 @@
   (string-append (param-key p) "=" (param-val p)))
 
 (: param->encoded-query-kv (case-> (Param -> String)
-				 (Param Boolean -> String)))
+				   (Param Boolean -> String)))
 (define (param->encoded-query-kv p [quote-value? #f])
   (string-append (encode-param-string (param-key p) #f)
 		 "="
@@ -156,7 +156,7 @@
 (define (params->query parms)
   (weave-string-separator "&" (map (λ: ((kv : (Pair String String)))
 				       (string-append (encode-param-string (car kv) #f)
-						      "=" 
+						      "="
 						      (encode-param-string (cdr kv) #f)))
 				   parms)))
 

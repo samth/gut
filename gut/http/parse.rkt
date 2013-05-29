@@ -18,9 +18,8 @@
 
 #lang typed/racket/base
 
-(require 
- (only-in net/uri/url/util
+(require
+ (only-in gut/uri/url/util
 	  maybe)
- (only-in net/uri/url/url
+ (only-in gut/uri/url/url
 	  Url-path Url-query))
-

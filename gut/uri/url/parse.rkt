@@ -19,25 +19,25 @@
 #lang typed/racket
 
 (provide:
-  [parse-url (String -> (Either ParseError Url))]
-  [parse-hier (Input-Port -> (values (Option String) String))]
-  [parse-query (Input-Port -> (Either ParseError QParams))]
-  [parse-fragment (Input-Port -> (Option String))]
-  [parse-authority (String Scheme -> (Option Authority))])
+ [parse-url (String -> (Either ParseError Url))]
+ [parse-hier (Input-Port -> (values (Option String) String))]
+ [parse-query (Input-Port -> (Either ParseError QParams))]
+ [parse-fragment (Input-Port -> (Option String))]
+ [parse-authority (String Scheme -> (Option Authority))])
 
-(require 
- (only-in type/either
+(require
+ (only-in grip/data/either
 	  Either Left Right Left? Right?
 	  left right)
- (only-in type/opt
+ (only-in grip/data/opt
 	  opt-apply-orelse
 	  opt-map)
- (only-in type/string
+ (only-in grip/data/string
 	  null-string?
 	  default-string)
  (only-in "../types.rkt"
 	  Uri Uri-scheme Scheme)
- (only-in "../urichar.rkt"	  
+ (only-in "../urichar.rkt"
 	  digit-char?)
  (only-in "../parse-util.rkt"
 	  read-until)
@@ -61,81 +61,81 @@
 (define (parse-char ip chtok)
   (let ((ch (peek-char ip)))
     (if (eof-object? ch)
-        #f
-        (if (eq? ch chtok)
-            (begin
-              (read-char ip)
-              #t)
-            #f))))
+	#f
+	(if (eq? ch chtok)
+	    (begin
+	      (read-char ip)
+	      #t)
+	    #f))))
 
 (: parse-authority-opaque (Input-Port -> (Option String)))
 (define (parse-authority-opaque ip)
   (let ((op (open-output-string)))
     (read-until ip op (case ch
-                        ((#\/ #\? #\#) #f)
-                        (else #t)))
+			((#\/ #\? #\#) #f)
+			(else #t)))
     (let ((auth (get-output-string op)))
       (if (eq? (string-length auth) "")
-          #f
-          auth))))
+	  #f
+	  auth))))
 
 (: parse-path-abempty (Input-Port -> String))
 (define (parse-path-abempty ip)
   (let ((op (open-output-string)))
     (let ((ch (peek-char ip)))
       (if (or (eof-object? ch)
-              (eq? ch #\?)
-              (eq? ch #\#))
-          ""
-          (if (not (eq? ch #\/))
-              (error "A URI with an authority can only have an absolute path.")
-              (begin (read-char ip)
-                     (write-char ch op)
-                     (let ((ch (peek-char ip)))
-                       (if (eq? ch #\/)
-                           (error "Absolute path must have a none empty segment.  i.e., // is illegal")
-                           (read-until ip op (or (pchar? ch)
-                                                 (eq? ch #\/))))))))
+	      (eq? ch #\?)
+	      (eq? ch #\#))
+	  ""
+	  (if (not (eq? ch #\/))
+	      (error "A URI with an authority can only have an absolute path.")
+	      (begin (read-char ip)
+		     (write-char ch op)
+		     (let ((ch (peek-char ip)))
+		       (if (eq? ch #\/)
+			   (error "Absolute path must have a none empty segment.  i.e., // is illegal")
+			   (read-until ip op (or (pchar? ch)
+						 (eq? ch #\/))))))))
       (get-output-string op))))
 
 (: parse-path-absolute (Input-Port -> String))
-(define (parse-path-absolute ip)  
-  (let ((op  (open-output-string)))    
+(define (parse-path-absolute ip)
+  (let ((op  (open-output-string)))
     ;; first segment must not have a ':'
     (read-until ip op (and (not (eq? ch #\:))
-                           (pchar? ch)))
+			   (pchar? ch)))
     (read-until ip op (or (pchar? ch)
-                          (eq? ch #\/)))                
+			  (eq? ch #\/)))
     (get-output-string op)))
 
 (: parse-path-rootless (Input-Port -> String))
-(define (parse-path-rootless ip)  
+(define (parse-path-rootless ip)
   (let ((op (open-output-string)))
     (read-until ip op (or (pchar? ch)
-                          (eq? ch #\/)))
+			  (eq? ch #\/)))
     (get-output-string op)))
 
 ;; returns 2 values
 ;;  1) opaque authority string or #f
 ;;  2) path
 (: parse-hier (Input-Port -> (values (Option String) String)))
-(define (parse-hier ip)  
+(define (parse-hier ip)
   (let ((ch (peek-char ip)))
     (if (eof-object? ch)
-        (values #f "")
-        (if (eq? ch #\/)
-            (begin
-              (read-char ip)
-              (if (eq? (peek-char ip) #\/)
-                  (begin
-                    (read-char ip) ; xxxx:// has been read
-                    (if (eq? (peek-char ip) #\/)                        
-                        (values #f (parse-path-absolute ip))
-                        (let ((authority (parse-authority-opaque ip)))
-                          (let ((path-abempty (parse-path-abempty ip)))
-                            (values authority path-abempty)))))
-                  (values #f (parse-path-absolute ip))))
-            (values #f (parse-path-rootless ip))))))
+	(values #f "")
+	(if (eq? ch #\/)
+	    (begin
+	      (read-char ip)
+	      (if (eq? (peek-char ip) #\/)
+		  (begin
+		    (read-char ip) ; xxxx:// has been read
+		    (if (eq? (peek-char ip) #\/)
+			(values #f (parse-path-absolute ip))
+			(let ((authority (parse-authority-opaque ip)))
+			  (let ((path-abempty (parse-path-abempty ip)))
+			    (values authority path-abempty)))))
+		  (values #f (parse-path-absolute ip))))
+	    (values #f (parse-path-rootless ip))))))
 
 ;; (: encode-char-out (Char Output-Port -> Void))
 ;; (define (encode-char-out ch outp)
@@ -143,7 +143,7 @@
 ;;   (display (string-upcase (number->string (char->integer ch) 16)) outp))
 
 ;; (: encode-out (Char Output-Port -> Output-Port))
-;; (define (encode-out ch outp)  
+;; (define (encode-out ch outp)
 ;;   (if (unreserved-char? ch)
 ;;       (write-char ch outp)
 ;;       (encode-char-out ch outp))
@@ -158,12 +158,12 @@
 (define MISSING-QUERY-PARAM-NAME "Query contains a '=' without a parameter name on the left hand side.")
 
 (: parse-query (Input-Port -> (Either ParseError QParams)))
-(define (parse-query ip)       
+(define (parse-query ip)
 
   (: end-of-query (Output-Port (Option String) QParams -> (Right QParams)))
   (define (end-of-query os name params)
-    (let ((token (get-output-string os)))			
-      (Right (if name 
+    (let ((token (get-output-string os)))
+      (Right (if name
 		 (reverse (cons (QParam name token) params))
 		 (if (null-string? token)
 		     (reverse params)
@@ -171,14 +171,14 @@
 
   (let ((ch (peek-char ip)))
     (if (eof-object? ch)
-	(Right '())    
-	(if (char=? ch #\?)      
+	(Right '())
+	(if (char=? ch #\?)
 	    (begin
 	      (read-char ip) ;; burn ?
-	      (let: loop : (Either ParseError QParams) 
+	      (let: loop : (Either ParseError QParams)
 		    ((ch : (U EOF Char) (read-char ip))
 		     (os : Output-Port (open-output-string))
-		     (name : (Option String) #f) 
+		     (name : (Option String) #f)
 		     (params : QParams '()))
 		    (if (eof-object? ch)
 			(end-of-query os name params)
@@ -205,7 +205,7 @@
 				    (open-output-string)
 				    #f
 				    (cons (QParam (get-output-string os) "") params))))
-			 (else 
+			 (else
 			  (loop (read-char ip) (write-out ch os) name params))))))
 	    (Right '())))))
 
@@ -214,10 +214,10 @@
   (let ((ch (peek-char ip)))
     (if (eof-object? ch)
 	#f
-	(begin 
+	(begin
 	  (when (char=? ch #\#)
 		(read-char ip))
-	  (let loop ((ch (read-char ip)) (os (open-output-string)))    
+	  (let loop ((ch (read-char ip)) (os (open-output-string)))
 	    (if (eof-object? ch)
 		(let ((frag (get-output-string os)))
 		  (if (null-string? frag) #f frag))
@@ -229,21 +229,21 @@
 (define (parse-port ip)
   (let ((ch (read-char ip)))
     (if (eof-object? ch)  ;; no port
-        #f
-        (if (not (eq? ch #\:))
-            (error "Host must be optionally followed by a port.  Something else found.")
-            (let ((op  (open-output-string))
-                  (ch  (peek-char ip)))
-              (if (or (eof-object? ch)
-                      (not (digit-char? ch)))
-                  (error "Missing port number or extraneous characters where port number was expected.")
-                  (let ((port (begin (read-until ip op (digit-char? ch))                                                 
-                                     (get-output-string op))))
-                    (let ((port (string->number port)))
-                      (if (and (exact-integer? port)
-                               (>= port 0))
-                          port
-                          (error "Invalid port (not a number?)"))))))))))
+	#f
+	(if (not (eq? ch #\:))
+	    (error "Host must be optionally followed by a port.  Something else found.")
+	    (let ((op  (open-output-string))
+		  (ch  (peek-char ip)))
+	      (if (or (eof-object? ch)
+		      (not (digit-char? ch)))
+		  (error "Missing port number or extraneous characters where port number was expected.")
+		  (let ((port (begin (read-until ip op (digit-char? ch))
+				     (get-output-string op))))
+		    (let ((port (string->number port)))
+		      (if (and (exact-integer? port)
+			       (>= port 0))
+			  port
+			  (error "Invalid port (not a number?)"))))))))))
 
 ;;; Parse the host and optional port from a given string
 ;;; returns: (values host port)
@@ -251,26 +251,26 @@
 (define (parse-host ip)
   (let ((op  (open-output-string)))
     (if (eof-object? (peek-char ip))
-        (error "URI missing required host.")        
-        (begin
-          (read-until ip op (or (unreserved-char? ch)
-                                (pct-encoded-char? ch)
-                                (sub-delim-char? ch)))
-          (let ((host (get-output-string op)))
-            (if (> (string-length host) 0)
-                host
-                #f))))))
+	(error "URI missing required host.")
+	(begin
+	  (read-until ip op (or (unreserved-char? ch)
+				(pct-encoded-char? ch)
+				(sub-delim-char? ch)))
+	  (let ((host (get-output-string op)))
+	    (if (> (string-length host) 0)
+		host
+		#f))))))
 
 (: parse-user (Input-Port -> (Option String)))
 (define (parse-user ip)
   (let ((op  (open-output-string)))
     (read-until ip op (or (unreserved-char? ch)
-                          (pct-encoded-char? ch)
-                          (sub-delim-char? ch)
-                          (eq? ch #\:)))                
+			  (pct-encoded-char? ch)
+			  (sub-delim-char? ch)
+			  (eq? ch #\:)))
     (if (not (eq? (read-char ip) #\@))
-        #f
-        (get-output-string op))))
+	#f
+	(get-output-string op))))
 
 (: scheme-default-port (Scheme -> (Option Natural)))
 (define (scheme-default-port scheme)
@@ -286,56 +286,56 @@
   (if (not (string? auth-str))
       #f
       (let ((ip (open-input-string auth-str)))
-        (let ((user (parse-user ip)))
-          (let ((ip (if user
-                        ip
-                        (open-input-string auth-str)))) ;; restart parse
-            (let ((host (parse-host ip))
-                  (port (let ((p (parse-port ip)))                          
-                          (if (and p (>= p 0)) p (scheme-default-port scheme)))))
-              (if host
-                  (Authority user host port)
-                  #f)))))))
+	(let ((user (parse-user ip)))
+	  (let ((ip (if user
+			ip
+			(open-input-string auth-str)))) ;; restart parse
+	    (let ((host (parse-host ip))
+		  (port (let ((p (parse-port ip)))
+			  (if (and p (>= p 0)) p (scheme-default-port scheme)))))
+	      (if host
+		  (Authority user host port)
+		  #f)))))))
 
 (: parse-url (String -> (Either ParseError Url)))
 (define (parse-url uri-str)
   (let ((ip (open-input-string uri-str)))
     (let: ((scheme : (Either ParseError Scheme) (parse-scheme ip)))
-      (if (Left? scheme)
-	  scheme
-	  (let-values (((authority path) (parse-hier ip)))
-	    (let* ((auth (if (string? authority)
-			     (parse-authority authority (right scheme))
-			     #f))
-		   (query (parse-query ip))
-		   (fragment (parse-fragment ip)))
-	      (if (Left? query)
-		  query
-		  (if auth
-		      (Right (Url (right scheme) auth path (right query) fragment))
-		      (Left (ParseError "Invalid scheme. Missing ':'?"))))))))))
+	  (if (Left? scheme)
+	      scheme
+	      (let-values (((authority path) (parse-hier ip)))
+		(let* ((auth (if (string? authority)
+				 (parse-authority authority (right scheme))
+				 #f))
+		       (query (parse-query ip))
+		       (fragment (parse-fragment ip)))
+		  (if (Left? query)
+		      query
+		      (if auth
+			  (Right (Url (right scheme) auth path (right query) fragment))
+			  (Left (ParseError "Invalid scheme. Missing ':'?"))))))))))
 
- ;; [uri->string (Uri -> String)]
- ;; [parse-http-path (String -> (Listof (Option String)))]
- ;; [uri->start-line-path-string (Uri -> String)]
- ;; [http-path-path ((Listof String) -> String)]
- ;; [http-path-query ((Listof String) -> String)]
- ;; [http-path-fragment ((Listof String) -> String)]
- ;; [extend-path (Uri String -> Uri)]
+;; [uri->string (Uri -> String)]
+;; [parse-http-path (String -> (Listof (Option String)))]
+;; [uri->start-line-path-string (Uri -> String)]
+;; [http-path-path ((Listof String) -> String)]
+;; [http-path-query ((Listof String) -> String)]
+;; [http-path-fragment ((Listof String) -> String)]
+;; [extend-path (Uri String -> Uri)]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; to parse a HTTP request start line path.				 ;;
-;; Given start-line "GET /a/b/c/d.txt?x=2#one" 				 ;;
+;; Given start-line "GET /a/b/c/d.txt?x=2#one"				 ;;
 ;; (parse-http-start-line-path start-line) => ("a/b/c/d.txt"  "x=2" "one")	 ;;
 ;; The other routines are just sugar to extract out the path, query or fragment ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (: http-path-path ((Listof String) -> String))
-;; (define (http-path-path slpath)  
+;; (define (http-path-path slpath)
 ;;   (car slpath))
 
 ;; (: http-path-query ((Listof String) -> String))
-;; (define (http-path-query slpath)  
+;; (define (http-path-query slpath)
 ;;   (cadr slpath))
 
 ;; (: http-path-fragment ((Listof String) -> String))
@@ -354,5 +354,3 @@
 ;; (define (extend-path url relative-path)
 ;;   (struct-copy Url url [path (path->string (build-path (Url-path uri)
 ;;                                                        (string->path relative-path)))]))
-
-

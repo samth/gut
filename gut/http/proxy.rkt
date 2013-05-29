@@ -26,7 +26,7 @@
 	 http-proxy-port)
 
 (require
- (only-in net/uri/url/url
+ (only-in gut/uri/url/url
 	  Url
 	  Authority))
 
@@ -59,7 +59,7 @@
 
 (: add-proxy-proc! (Symbol (Authority Url -> Boolean) -> Void))
 (define (add-proxy-proc! symbol proc)
-  (set! proxy-escape (cons (cons symbol proc) 
+  (set! proxy-escape (cons (cons symbol proc)
 			   proxy-escape)))
 
 (: remove-proxy-proc! (Symbol -> Void))
@@ -69,14 +69,13 @@
 			     proxy-escape)))
 
 ;; Determine if a http request should use the proxy or not.
-(define http-proxy? 
+(define http-proxy?
   (lambda (authority uri)
     #f))
 ;; (lambda (authority uri)
 ;;   (let loop ((escapes proxy-escape))
 ;;     (if (null? escapes)
-;; 	 #f
-;; 	 (if ((cdr (car escapes)) authority uri)
-;; 	    #t
-;; 	    (loop (cdr escapes)))))))
-
+;;	 #f
+;;	 (if ((cdr (car escapes)) authority uri)
+;;	    #t
+;;	    (loop (cdr escapes)))))))

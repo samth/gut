@@ -26,25 +26,25 @@
 
 (require
  racket/pretty
- (only-in type/text
+ (only-in grip/data/text
 	  weave-string-separator)
- (only-in type/opt
+ (only-in grip/data/opt
 	  opt-map-orelse-value
 	  opt-map-orelse)
- (only-in crypto/hmac
+ (only-in grommet/crypto/hmac
 	  hmac-sha1)
- (only-in crypto/base64
+ (only-in grommet/crypto/base64
 	  base64-encode)
- (only-in net/uri/url/url
+ (only-in gut/uri/url/url
 	  scheme->string
 	  Authority-host
 	  QParam QParams QParam-name QParam-value
 	  Uri Url Uri-scheme Url-authority Url-path Url-query Url-fragment)
- (only-in net/http/param
+ (only-in gut/http/param
 	  Param Params  param->noencode-string
 	  param make-params empty-params
 	  param-keyval params->query add-param)
- (only-in net/http/http11
+ (only-in gut/http/http11
 	  Method http-method->string)
  (only-in "encode.rkt"
 	  encode))

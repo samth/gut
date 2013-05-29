@@ -10,17 +10,17 @@
 
 (require
  racket/pretty
- (only-in net/uri/url/url
+ (only-in gut/uri/url/url
 	  Url-authority Authority-host
 	  Url url->string)
- (only-in net/http/http11
+ (only-in gut/http/http11
 	  http-invoke http-close-connection
 	  HTTPConnection-in)
- (only-in net/http/header
+ (only-in gut/http/header
 	  make-header
 	  agent-header
 	  host-header)
- (only-in format/xml/sxml
+ (only-in "../../xml/sxml.rkt"
 	  Sxml SXPath
 	  sxpath xml->sxml select-single-node-text))
 

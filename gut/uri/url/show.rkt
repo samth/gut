@@ -26,11 +26,11 @@
  [url->string (Url -> String)])
 
 (require
- (only-in type/string
+ (only-in grip/data/string
 	  null-string?)
- (only-in type/opt
+ (only-in grip/data/opt
 	  opt-apply-orelse)
- (only-in type/text
+ (only-in grip/data/text
 	  weave-string-separator)
  (only-in "../types.rkt"
 	  Uri-scheme)

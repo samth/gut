@@ -3,8 +3,8 @@
 (provide:
  [encode (String -> String)])
 
-(require 
- (only-in net/uri/urichar
+(require
+ (only-in gut/uri/urichar
 	  alphabet-char?
 	  digit-char?))
 
@@ -27,7 +27,7 @@
   (display (string-upcase (number->string (char->integer ch) 16)) outp))
 
 (: encode-out (Char Output-Port -> Output-Port))
-(define (encode-out ch outp)  
+(define (encode-out ch outp)
   (if (clear-char? ch)
       (write-char ch outp)
       (encode-char-out ch outp))
