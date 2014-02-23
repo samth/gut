@@ -1,3 +1,3 @@
 #lang setup/infotab
-(define name "aws")
+(define name "gut")
 (define scribblings '(("scribblings/manual.scrbl" (multi-page))))
