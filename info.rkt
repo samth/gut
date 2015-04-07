@@ -1,2 +1,3 @@
 #lang setup/infotab
-(define deps (list))
+(define deps (list "grip"))
+(define collection 'multi)
