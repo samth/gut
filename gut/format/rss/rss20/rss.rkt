@@ -97,7 +97,7 @@
 (define (fetch-rss uri)
   (let ((headers  `(,(agent-header "curl/7.16.4 (x86_64-redhat-linux-gnu) libcurl/7.16.4 OpenSSL/0.9.8b zlib/1.2.3 libidn/0.6.8"))))
     (let ((connection (http-invoke 'GET uri headers #f)))
-      (with-handlers [(exn:fail? (lambda (ex)
+      (with-handlers [(exn:fail? (lambda ([ex : exn:fail])
 				   ((error-display-handler) "ERROR in S3 invocation." ex)
 				   (displayln ex)
 				   (http-close-connection connection)
