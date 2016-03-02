@@ -9,7 +9,7 @@
  JSon)
 
 (require/typed
- (planet neil/json-parsing:1)
+ json-parsing
  (json->sjson (Input-Port -> JSon)))
 
 (define-type JSon (Rec Json (U String Boolean Null Number (Listof Json) (HashTable Symbol Json))))

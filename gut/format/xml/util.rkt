@@ -6,7 +6,7 @@
  select-single-node-text)
 
 (require/typed
- (planet lizorkin/sxml:2:1/sxml)
+ sxml
  (sxpath (String (Listof (Pair Symbol String)) -> ((Listof Any) -> (Listof Any))))
  (sxml:text ((Listof Any) -> String)))
 

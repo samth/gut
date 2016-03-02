@@ -31,15 +31,15 @@
 (define-type SXPath (Sxml -> Sxml))
 
 (require/typed 
- (planet neil/htmlprag:1:7)
- ((html->sxml-2nf html->sxml) (Input-Port -> Sxml)))
+ html-parsing
+ ((html->xexp html->sxml) (Input-Port -> Sxml)))
 
 (require/typed 
- (planet lizorkin/ssax:2:0/ssax)
+ sxml
  ((ssax:xml->sxml xml->sxml) (Input-Port (Listof (Pair Symbol String)) -> Sxml)))
 
 (require/typed
- (planet lizorkin/sxml:2:1/sxml)
+ sxml
  ((srl:sxml->html sxml->html) ((Listof Any) Output-Port -> Void))
  (sxpath (String (Listof (Pair Symbol String)) -> (Sxml -> Sxml)))
  ((sxml:text node-text) ((Listof Any) -> String)))
